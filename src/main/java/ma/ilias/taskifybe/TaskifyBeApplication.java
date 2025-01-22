@@ -4,13 +4,10 @@ import ma.ilias.taskifybe.dao.entities.AppUser;
 import ma.ilias.taskifybe.dao.entities.Task;
 import ma.ilias.taskifybe.dao.repositories.TaskRepository;
 import ma.ilias.taskifybe.dao.repositories.AppUserRepository;
-import ma.ilias.taskifybe.dto.NewAppUserDto;
 import ma.ilias.taskifybe.enums.TaskStatus;
-import ma.ilias.taskifybe.mapper.AppUserMapper;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
@@ -26,10 +23,11 @@ public class TaskifyBeApplication {
     }
 
     @Bean
-    public CommandLineRunner commandLineRunner(AppUserRepository appUserRepository,
-                                               TaskRepository taskRepository,
-                                               AppUserMapper appUserMapper,
-                                               BCryptPasswordEncoder passwordEncoder) {
+    public CommandLineRunner commandLineRunner(
+//            AppUserRepository appUserRepository,
+//            TaskRepository taskRepository,
+//            BCryptPasswordEncoder passwordEncoder
+    ) {
         return args -> {
 //            AppUser appUser1 = AppUser.builder().firstName("John").lastName("Doe")
 //                    .email("johndoe@example.com").password(passwordEncoder.encode("password123")).build();
@@ -74,5 +72,4 @@ public class TaskifyBeApplication {
 //            taskRepository.saveAll(List.of(task1, task2, task3, task4, task5, task6));
         };
     }
-
 }
