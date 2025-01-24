@@ -36,7 +36,7 @@ public class TaskifyBeApplication {
 //                    .email("janesmith@example.com").password(passwordEncoder.encode("password456")).build();
 //
 //            AppUser appUser3 = AppUser.builder().firstName("Ilias").lastName("Ouaddaf")
-//                    .email("ilias@gmail.com").password(passwordEncoder.encode("admin")).build();
+//                    .email("ilias@gmail.com").password(passwordEncoder.encode("rootroot")).build();
 //
 //            Task task1 = Task.builder().title("Finish project report")
 //                    .description("Complete the project report by next week")

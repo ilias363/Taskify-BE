@@ -16,6 +16,6 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
         response.addHeader("WWW-Authenticate", "Basic real- taskify-be");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json");
-        response.getWriter().write("{\"error\":\"Unauthorized\", \"message\": \"" + authException.getMessage() + "\"}");
+        response.getWriter().write("{\"message\": \"" + authException.getMessage() + "\", \"status\":\"false\"}");
     }
 }

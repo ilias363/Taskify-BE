@@ -2,6 +2,7 @@ package ma.ilias.taskifybe.web;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import ma.ilias.taskifybe.dto.AppUserDto;
 import ma.ilias.taskifybe.dto.LoginRequestDto;
 import ma.ilias.taskifybe.dto.NewAppUserDto;
@@ -13,6 +14,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -36,7 +38,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequestDto loginRequestDto, HttpServletRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto loginRequestDto, HttpServletRequest request) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -47,8 +49,12 @@ public class AuthController {
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            HttpSession session = request.getSession(true);
-            session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
+            HttpSession session = request.getSession(false);
+            if (session != null) {
+                session.invalidate();
+            }
+            HttpSession newSession = request.getSession(true);
+            newSession.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
 
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             String authUserEmail = userDetails.getUsername();
@@ -80,6 +86,33 @@ public class AuthController {
         return ResponseEntity.ok(Map.of(
                 "message", "Logout successful",
                 "status", true
+        ));
+    }
+
+    @GetMapping("/isloggedin")
+    public ResponseEntity<Map<String, Boolean>> isLoggedIn(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        boolean isLoggedIn = session != null && session.getAttribute("SPRING_SECURITY_CONTEXT") != null;
+
+        return ResponseEntity.ok(Map.of(
+                "isLoggedIn", isLoggedIn
+        ));
+    }
+
+    @GetMapping("/test")
+    public ResponseEntity<?> testGet() {
+        return ResponseEntity.ok(Map.of(
+                "message", "successful",
+                "status", true
+        ));
+    }
+
+    @PostMapping("/test")
+    public ResponseEntity<?> testPost(@RequestBody LoginRequestDto loginRequestDto) {
+
+        return ResponseEntity.ok(Map.of(
+                "your email", loginRequestDto.getPassword(),
+                "your password", loginRequestDto.getPassword()
         ));
     }
 }
