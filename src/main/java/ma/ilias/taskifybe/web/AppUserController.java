@@ -1,15 +1,18 @@
 package ma.ilias.taskifybe.web;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import ma.ilias.taskifybe.dto.AppUserDto;
-import ma.ilias.taskifybe.dto.NewAppUserDto;
+import ma.ilias.taskifybe.dto.ResponseDto;
 import ma.ilias.taskifybe.service.AppUserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/users")
@@ -18,40 +21,34 @@ public class AppUserController {
     private AppUserService appUserService;
 
     @GetMapping("/me")
-    public ResponseEntity<AppUserDto> authenticatedUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    public ResponseEntity<ResponseDto<AppUserDto>> authenticatedUser(@AuthenticationPrincipal UserDetails userDetails) {
 
-        String currentUserEmail = authentication.getName();
+        String currentUserEmail = userDetails.getUsername();
         AppUserDto currentUser = appUserService.getAppUserByEmail(currentUserEmail);
 
-        return ResponseEntity.ok(currentUser);
+        return ResponseEntity.ok(new ResponseDto<>("Successful", true, currentUser));
     }
 
-    @PostMapping("/create")
-    public ResponseEntity<AppUserDto> createUser(@RequestBody NewAppUserDto newAppUserDto) {
-        AppUserDto createdUser = appUserService.createAppUser(newAppUserDto);
-        return ResponseEntity.ok(createdUser);
-    }
+    @DeleteMapping("/me")
+    public ResponseEntity<ResponseDto<AppUserDto>> deleteAuthenticatedUser(
+            HttpServletRequest request,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        String email = userDetails.getUsername();
+        Boolean deleted = appUserService.deleteAppUserByEmail(email);
 
-    @GetMapping
-    public ResponseEntity<List<AppUserDto>> getAllUsers() {
-        return ResponseEntity.ok(appUserService.getAllAppUsers());
-    }
+        if (deleted == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ResponseDto<>("User not found", false));
 
-    @GetMapping("/{id}")
-    public ResponseEntity<AppUserDto> getUserById(@PathVariable Long id) {
-        AppUserDto userDto = appUserService.getAppUserById(id);
-        return userDto != null ? ResponseEntity.ok(userDto) : ResponseEntity.notFound().build();
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<AppUserDto> updateUser(@PathVariable Long id, @RequestBody AppUserDto appUserDto) {
-        AppUserDto updatedUser = appUserService.updateAppUser(id, appUserDto);
-        return updatedUser != null ? ResponseEntity.ok(updatedUser) : ResponseEntity.notFound().build();
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        return appUserService.deleteAppUser(id) ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+        if (deleted) {
+            HttpSession session = request.getSession(false);
+            if (session != null) session.invalidate();
+            SecurityContextHolder.clearContext();
+            return ResponseEntity.ok(new ResponseDto<>("User deleted successfully", true));
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ResponseDto<>("Error deleting the user", false));
+        }
     }
 }

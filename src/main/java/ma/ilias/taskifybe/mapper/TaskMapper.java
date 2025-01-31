@@ -1,6 +1,7 @@
 package ma.ilias.taskifybe.mapper;
 
 import ma.ilias.taskifybe.dao.entities.Task;
+import ma.ilias.taskifybe.dto.NewTaskDto;
 import ma.ilias.taskifybe.dto.TaskDto;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
@@ -15,5 +16,9 @@ public class TaskMapper {
 
     public Task fromTaskDtoToTask(TaskDto taskDto) {
         return modelMapper.map(taskDto, Task.class);
+    }
+
+    public Task fromNewTaskDtoToTask(NewTaskDto newTaskDto) {
+        return modelMapper.map(newTaskDto, Task.class);
     }
 }

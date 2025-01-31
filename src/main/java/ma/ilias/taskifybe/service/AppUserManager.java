@@ -23,10 +23,14 @@ public class AppUserManager implements AppUserService {
     private PasswordEncoder passwordEncoder;
 
     public AppUserDto createAppUser(NewAppUserDto newAppUserDto) {
-        newAppUserDto.setPassword(passwordEncoder.encode(newAppUserDto.getPassword()));
-        return appUserMapper.fromUserToUserDto(
-                appUserRepository.save(appUserMapper.fromNewUserDtoToUser(newAppUserDto))
-        );
+        try {
+            newAppUserDto.setPassword(passwordEncoder.encode(newAppUserDto.getPassword()));
+            return appUserMapper.fromUserToUserDto(
+                    appUserRepository.save(appUserMapper.fromNewUserDtoToUser(newAppUserDto))
+            );
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public List<AppUserDto> getAllAppUsers() {
@@ -55,8 +59,10 @@ public class AppUserManager implements AppUserService {
         return appUserMapper.fromUserToUserDto(appUserRepository.save(existingUser));
     }
 
-    public Boolean deleteAppUser(Long id) {
-        appUserRepository.deleteById(id);
-        return !appUserRepository.existsById(id);
+    public Boolean deleteAppUserByEmail(String email) {
+        AppUser appUser = appUserRepository.findByEmail(email).orElse(null);
+        if (appUser == null) return null;
+        appUserRepository.deleteById(appUser.getId());
+        return !appUserRepository.existsById(appUser.getId());
     }
 }

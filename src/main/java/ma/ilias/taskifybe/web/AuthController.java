@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import ma.ilias.taskifybe.dto.AppUserDto;
 import ma.ilias.taskifybe.dto.LoginRequestDto;
 import ma.ilias.taskifybe.dto.NewAppUserDto;
+import ma.ilias.taskifybe.dto.ResponseDto;
 import ma.ilias.taskifybe.service.AppUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,9 +15,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -32,13 +31,17 @@ public class AuthController {
     private AppUserService appUserService;
 
     @PostMapping("/register")
-    public ResponseEntity<AppUserDto> register(@RequestBody NewAppUserDto newAppUserDto) {
-        AppUserDto registeredUser = appUserService.createAppUser(newAppUserDto);
-        return ResponseEntity.ok(registeredUser);
+    public ResponseEntity<ResponseDto<Void>> register(@Valid @RequestBody NewAppUserDto newAppUserDto) {
+        AppUserDto newUser = appUserService.createAppUser(newAppUserDto);
+        return newUser != null ?
+                ResponseEntity.ok(new ResponseDto<>("Register successful", true))
+                :
+                ResponseEntity.ok(new ResponseDto<>("Error creating the account", true));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto loginRequestDto, HttpServletRequest request) {
+    public ResponseEntity<ResponseDto<Void>> login(@Valid @RequestBody LoginRequestDto loginRequestDto,
+                                             HttpServletRequest request) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -56,26 +59,20 @@ public class AuthController {
             HttpSession newSession = request.getSession(true);
             newSession.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
 
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            String authUserEmail = userDetails.getUsername();
-            AppUserDto authUser = appUserService.getAppUserByEmail(authUserEmail);
-
-            return ResponseEntity.ok(authUser);
+            return ResponseEntity.ok(new ResponseDto<>("Login successful", true));
         } catch (BadCredentialsException ex) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                    "message", "Invalid credentials",
-                    "status", false
-            ));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                    new ResponseDto<>("Invalid credentials", false)
+            );
         } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                    "message", "Authentication failed : " + ex.getMessage(),
-                    "status", false
-            ));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                    new ResponseDto<>("Authentication failed : " + ex.getMessage(), false)
+            );
         }
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletRequest request) {
+    public ResponseEntity<ResponseDto<Void>> logout(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         if (session != null) {
             session.invalidate();
@@ -83,36 +80,16 @@ public class AuthController {
 
         SecurityContextHolder.clearContext();
 
-        return ResponseEntity.ok(Map.of(
-                "message", "Logout successful",
-                "status", true
-        ));
+        return ResponseEntity.ok(new ResponseDto<>("Logout successful", true));
     }
 
     @GetMapping("/isloggedin")
-    public ResponseEntity<Map<String, Boolean>> isLoggedIn(HttpServletRequest request) {
+    public ResponseEntity<ResponseDto<Map<String, Boolean>>> isLoggedIn(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         boolean isLoggedIn = session != null && session.getAttribute("SPRING_SECURITY_CONTEXT") != null;
 
-        return ResponseEntity.ok(Map.of(
-                "isLoggedIn", isLoggedIn
-        ));
-    }
-
-    @GetMapping("/test")
-    public ResponseEntity<?> testGet() {
-        return ResponseEntity.ok(Map.of(
-                "message", "successful",
-                "status", true
-        ));
-    }
-
-    @PostMapping("/test")
-    public ResponseEntity<?> testPost(@RequestBody LoginRequestDto loginRequestDto) {
-
-        return ResponseEntity.ok(Map.of(
-                "your email", loginRequestDto.getPassword(),
-                "your password", loginRequestDto.getPassword()
-        ));
+        return ResponseEntity.ok(
+                new ResponseDto<>("Successful", true, Map.of("isLoggedIn", isLoggedIn))
+        );
     }
 }
